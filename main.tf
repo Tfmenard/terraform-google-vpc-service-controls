@@ -1,5 +1,5 @@
 /**
- * Copyright 2018 Google LLC
+ * Copyright 2019 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-resource "google_storage_bucket" "default_bucket" {
-  project = "${var.project_id}"
-  name    = "${var.bucket_name}"
+resource "google_access_context_manager_access_policy" "access_policy" {
+  provider = "google"
+  parent   = "organizations/${var.parent_id}"
+  title    = "${var.policy_name}"
 }

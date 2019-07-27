@@ -1,5 +1,21 @@
+/**
+ * Copyright 2019 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 variable "policy" {
-  description = "(Required) Name of the parent policy"
+  description = "Name of the parent policy"
 }
 
 variable "description" {
@@ -11,29 +27,23 @@ variable "perimeter_name" {
 }
 
 variable "restricted_services" {
-  # description = "(Optional) GCP services that are subject to the Service Perimeter restrictions. May contain a list of services or a single wildcard "". For example, if storage.googleapis.com is specified, access to the storage buckets inside the perimeter must meet the perimeter's access restrictions. Wildcard means that unless explicitly specified by 'unrestrictedServices' list, any service is treated as restricted. One of the fields 'restrictedServices', 'unrestrictedServices' must contain a wildcard '', otherwise the Service Perimeter specification is invalid. It also means that both field being empty is invalid as well. 'restrictedServices' can be empty if and only if 'unrestrictedServices' list contains a '*' wildcard."
-  type    = "list"
-  default = [""]
-}
-
-variable "unrestricted_services" {
-  #description = " ](Optional) GCP services that are not subject to the Service Perimeter restrictions. May contain a list of services or a single wildcard "". For example, if logging.googleapis.com is unrestricted, users can access logs inside the perimeter as if the perimeter doesn't exist, and it also means VMs inside the perimeter can access logs outside the perimeter. The wildcard means that unless explicitly specified by "restrictedServices" list, any service is treated as unrestricted. One of the fields "restrictedServices", "unrestrictedServices" must contain a wildcard "", otherwise the Service Perimeter specification is invalid. It also means that both field being empty is invalid as well. "unrestrictedServices" can be empty if and only if "restrictedServices" list contains a "*" wildcard."
-  type    = "list"
-  default = ["*"]
+  description = "GCP services that are subject to the Service Perimeter restrictions. Must contain a list of services. For example, if storage.googleapis.com is specified, access to the storage buckets inside the perimeter must meet the perimeter's access restrictions."
+  type        = "list"
+  default     = []
 }
 
 variable "resources" {
-  description = "(Optional) A list of GCP resources that are inside of the service perimeter. Currently only projects are allowed."
+  description = "A list of GCP resources that are inside of the service perimeter. Currently only projects are allowed."
   type        = "list"
-  default     = [""]
+  default     = []
 }
 
 variable "access_levels" {
-  description = "(Optional) A list of AccessLevel resource names that allow resources within the ServicePerimeter to be accessed from the internet. AccessLevels listed must be in the same policy as this ServicePerimeter. Referencing a nonexistent AccessLevel is a syntax error. If no AccessLevel names are listed, resources within the perimeter can only be accessed via GCP calls with request origins within the perimeter. "
-  default = [""]
+  description = "A list of AccessLevel resource names that allow resources within the ServicePerimeter to be accessed from the internet. AccessLevels listed must be in the same policy as this ServicePerimeter. Referencing a nonexistent AccessLevel is a syntax error. If no AccessLevel names are listed, resources within the perimeter can only be accessed via GCP calls with request origins within the perimeter. "
+  default     = []
 }
 
 variable "shared_resources" {
-  description = "(Optional) A map of lists of resources to share in a Bridge perimeter module. Each list should contain all or a subset of the perimeters resources"
-  default       = {}
+  description = "A map of lists of resources to share in a Bridge perimeter module. Each list should contain all or a subset of the perimeters resources"
+  default     = {}
 }

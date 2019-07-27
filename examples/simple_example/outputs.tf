@@ -1,5 +1,5 @@
 /**
- * Copyright 2018 Google LLC
+ * Copyright 2019 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,9 +14,22 @@
  * limitations under the License.
  */
 
-output "parent_id" {
-  value = "${var.parent_id}"
-}
 output "policy_name" {
-  value = "${var.policy_name}"
+  description = "Name of the parent policy"
+  value       = "${var.policy_name}"
+}
+
+output "protected_project_id" {
+  description = "Project id of the project INSIDE the regular service perimeter"
+  value       = "${var.protected_project_ids["id"]}"
+}
+
+output "dataset_id" {
+  description = "Unique id for the BigQuery dataset being provisioned"
+  value       = "${module.bigquery.dataset_id}"
+}
+
+output "table_id" {
+  description = "Unique id for the BigQuery table being provisioned"
+  value       = "${module.bigquery.table_id}"
 }

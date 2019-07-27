@@ -1,5 +1,5 @@
 /**
- * Copyright 2018 Google LLC
+ * Copyright 2019 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,18 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-resource "random_string" "random_suffix" {
-  length  = 4
-  upper   = "false"
-  lower   = "true"
-  number  = "false"
-  special = "false"
-}
-
 module "example" {
-  source = "../../../examples/simple_example"
-
-  project_id  = "${var.project_id}"
-  bucket_name = "simple-example-${random_string.random_suffix.result}"
+  source                = "../../../examples/simple_example"
+  parent_id             = "${var.parent_id}"
+  policy_name           = "${var.policy_name}"
+  protected_project_ids = "${var.protected_project_ids}"
+  members               = "${var.members}"
+  credentials_path      = "${var.credentials_path}"
 }

@@ -1,5 +1,5 @@
 /**
- * Copyright 2018 Google LLC
+ * Copyright 2019 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,11 +14,26 @@
  * limitations under the License.
  */
 
-output "project_id" {
-  value = "${var.project_id}"
+output "parent_id" {
+  value = "${var.parent_id}"
 }
 
-output "bucket_name" {
-  description = "Bucket name"
-  value       = "${module.example.bucket_name}"
+output "policy_name" {
+  value = "${var.policy_name}"
+}
+
+output "protected_project_id" {
+  value = "${var.protected_project_ids["id"]}"
+}
+
+output "public_project_id" {
+  value = "${var.public_project_ids["id"]}"
+}
+
+output "dataset_id" {
+  value = "${module.example.dataset_id}"
+}
+
+output "table_id" {
+  value = "${module.example.table_id}"
 }

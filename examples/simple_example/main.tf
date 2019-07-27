@@ -1,5 +1,5 @@
 /**
- * Copyright 2018 Google LLC
+ * Copyright 2019 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,28 +14,63 @@
  * limitations under the License.
  */
 
-provider "google-beta" {
-  version = "~> 2.3"
-  #region  = "${var.region}"
-  credentials = "${file("./credentials.json")}"
+provider "google" {
+  version     = "~> 2.5.0"
+  credentials = "${file("${var.credentials_path}")}"
 }
 
-module "org-policy" {
-  source      = "../../modules/policy"
+module "org_policy" {
+  source      = "../.."
   parent_id   = "${var.parent_id}"
   policy_name = "${var.policy_name}"
 }
 
-module "regular-service-perimeter-1" {
-  source         = "../../modules/regular_service_perimeter"
-  policy         = "${module.org-policy.policy_id}"
-  perimeter_name = "regular_perimeter_1"
-  description    = "Some description"
-  resources      = ["743286545054"]
+module "access_level_members" {
+  source  = "../../modules/access_level"
+  policy  = "${module.org_policy.policy_id}"
+  name    = "terraform_members"
+  members = "${var.members}"
+}
 
+module "regular_service_perimeter_1" {
+  source         = "../../modules/regular_service_perimeter"
+  policy         = "${module.org_policy.policy_id}"
+  perimeter_name = "regular_perimeter_1"
+
+  description = "Perimeter shielding bigquery project"
+  resources   = ["${var.protected_project_ids["number"]}"]
+
+  access_levels       = ["${module.access_level_members.name}"]
   restricted_services = ["bigquery.googleapis.com", "storage.googleapis.com"]
-  #access_levels = ["${module.access-level-device-lock.link}”, "${module.access_level_2.link}”]
+
   shared_resources = {
-    all     = ["743286545054"]
+    all = ["${var.protected_project_ids["number"]}"]
+  }
+}
+
+module "bigquery" {
+  source  = "terraform-google-modules/bigquery/google"
+  version = "0.1.0"
+
+  dataset_id        = "sample_dataset"
+  dataset_name      = "sample_dataset"
+  description       = "Dataset with a single table with one field"
+  expiration        = "3600000"
+  project_id        = "${var.protected_project_ids["id"]}"
+  location          = "US"
+  table_id          = "example_table"
+  time_partitioning = "DAY"
+  schema_file       = "sample_bq_schema.json"
+
+  dataset_labels = {
+    env      = "dev"
+    billable = "true"
+    owner    = "janesmith"
+  }
+
+  table_labels = {
+    env      = "dev"
+    billable = "true"
+    owner    = "joedoe"
   }
 }

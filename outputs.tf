@@ -1,5 +1,5 @@
 /**
- * Copyright 2018 Google LLC
+ * Copyright 2019 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +14,12 @@
  * limitations under the License.
  */
 
-output "default_bucket_name" {
-  value = "${google_storage_bucket.default_bucket.name}"
+output "policy_id" {
+  description = "Resource name of the AccessPolicy."
+  value       = "${google_access_context_manager_access_policy.access_policy.name}"
+}
+
+output "policy_name" {
+  description = "The policy's name."
+  value       = "${var.policy_name}"
 }

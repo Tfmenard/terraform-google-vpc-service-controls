@@ -1,5 +1,5 @@
 /**
- * Copyright 2018 Google LLC
+ * Copyright 2019 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +14,29 @@
  * limitations under the License.
  */
 
-variable "project_id" {
-  description = "The GCP project to use for integration tests"
+variable "parent_id" {
+  description = "The parent of this AccessPolicy in the Cloud Resource Hierarchy. As of now, only organization are accepted as parent."
+}
+
+variable "policy_name" {
+  description = "The policy's name."
+}
+
+variable "protected_project_ids" {
+  description = "Project id and number of the project within the regular service perimeter"
+  type        = "map"
+}
+
+variable "public_project_ids" {
+  description = "Project id and number of the project OUTSIDE of the regular service perimeter. This variable is only necessary for running integration tests. This map variable expects an \"id\" for the project id and \"number\" key for the project number."
+  type        = "map"
+}
+
+variable "members" {
+  type    = "list"
+  default = []
+}
+
+variable "credentials_path" {
+  description = "Path to credentials.json key for service account deploying resources"
 }

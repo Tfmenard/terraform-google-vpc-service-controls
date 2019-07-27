@@ -1,18 +1,43 @@
 # terraform-google-vpc-service-controls
 
-This module was generated from [terraform-google-module-template](https://github.com/terraform-google-modules/terraform-google-module-template/), which by default generates a module that simply creates a GCS bucket. As the module develops, this README should be updated.
-
-The resources/services/activations/deletions that this module will create/trigger are:
-- Create a GCS bucket with the provided name
+This module handles opiniated VPC Service Controls and Access Context Manager configuration and deployments.
 
 ## Usage
-There are examples included in the [examples](./examples/) folder but simple usage is as follows:
+The root module only handles the configuration of the [access_context_manager_policy resource](https://www.terraform.io/docs/providers/google/r/access_context_manager_access_policy.html). For examples on how to use the root module with along with other submodules to configure all of VPC Service Controls and Access Context Manager resources, see the [examples](./examples/) folder and the [modules](./modules/) folder
 
 ```hcl
-module "bucket" {
-  source                     = "terraform-google-modules/vpc-service-controls/google"
-  project_id                 = "<PROJECT ID>"
-  bucket_name                = "gcs-test-bucket"
+provider "google" {
+  version     = "~> 2.5.0"
+  credentials = "${file("${var.credentials_path}")}"
+}
+
+module "org_policy" {
+  source      = "terraform-google-modules/vpc-service-controls/google"
+  parent_id   = "${var.parent_id}"
+  policy_name = "${var.policy_name}"
+}
+
+module "access_level_members" {
+  source   = "terraform-google-modules/vpc-service-controls/google//modules/access_level"
+  policy      = "${module.org_policy.policy_id}"
+  name        = "terraform_members"
+  members  = "${var.members}"
+}
+
+module "regular_service_perimeter_1" {
+   source         = "terraform-google-modules/vpc-service-controls/google//modules/regular_service_perimeter"
+  policy         = "${module.org_policy.policy_id}"
+  perimeter_name = "regular_perimeter_1"
+
+  description    = "Perimeter shielding projects"
+  resources      = ["1111111"]
+
+  access_levels = ["${module.access_level_members.name}"]
+  restricted_services = ["bigquery.googleapis.com", "storage.googleapis.com"]
+
+  shared_resources = {
+    all = ["11111111"]
+  }
 }
 ```
 
@@ -23,8 +48,26 @@ Then perform the following commands on the root folder:
 - `terraform apply` to apply the infrastructure build
 - `terraform destroy` to destroy the built infrastructure
 
+### Known limitations
+
+The [Access Context Manager API](https://cloud.google.com/access-context-manager/docs/) guarantees that resources will be created, but there may be a delay between a successful response and the change taking effect. For example, ["after you create a service perimeter, it may take up to 30 minutes for the changes to propagate and take effect"](https://cloud.google.com/vpc-service-controls/docs/create-service-perimeters).
+Because of these limitations in the API, you may first get an error when running `terraform apply` for the first time. However, for the [examples](./examples/) you should be able to succesfully deploy all resources by running `terraform apply` a second about 15 seconds after running it for the first time.
 
 [^]: (autogen_docs_start)
+
+## Inputs
+
+| Name | Description | Type | Default | Required |
+|------|-------------|:----:|:-----:|:-----:|
+| parent\_id | The parent of this AccessPolicy in the Cloud Resource Hierarchy. As of now, only organization are accepted as parent. | string | n/a | yes |
+| policy\_name | The policy's name. | string | n/a | yes |
+
+## Outputs
+
+| Name | Description |
+|------|-------------|
+| policy\_id | Resource name of the AccessPolicy. |
+| policy\_name | The policy's name. |
 
 [^]: (autogen_docs_end)
 
@@ -40,36 +83,43 @@ The [project factory](https://github.com/terraform-google-modules/terraform-goog
 
 ### Software Dependencies
 ### Terraform
-- [Terraform](https://www.terraform.io/downloads.html) 0.10.x
-- [terraform-provider-google](https://github.com/terraform-providers/terraform-provider-google) plugin v1.8.0
+- [Terraform](https://www.terraform.io/downloads.html) 0.11.x
+- [terraform-provider-google](https://github.com/terraform-providers/terraform-provider-google) plugin v2.0.0
 
 ### Configure a Service Account
-In order to execute this module you must have a Service Account with the
-following project roles:
-- roles/storage.admin
+
+#### Organization level permissions
+In order to create a policy, you need to grant your service account the Access Context Manager Admin role at the organization level:
+- roles/accesscontextmanager.policyAdmin
+
+You may use the following command:
+`gcloud organizations add-iam-policy-binding ORGANIZATION_ID \
+  --member="serviceAccount:example@project_id.iam.gserviceaccount.com" \
+  --role="roles/accesscontextmanager.policyAdmin"`
+
+### Configure user permission
+In order to view VPC Service Controls and Access Context Manger using the Google Cloud Platform Console, your user accounts will need to be granted the Resource Manager Organization Viewer:
+- roles/resourcemanager.organizationViewer
+
+You may use the following command:
+`gcloud projects add-iam-policy-binding <my project id> \
+  --member="user:example@domain.com" \
+  --role="roles/resourcemanager.organizationViewer"`
+
+For more information see the [Access Context Manager ACL Page](https://cloud.google.com/access-context-manager/docs/access-control)
+
 
 ### Enable APIs
 In order to operate with the Service Account you must activate the following APIs on the project where the Service Account was created:
 
 - Storage JSON API - storage-api.googleapis.com
+- Big Query API - bigquery.googleapis.com
 
 ## Install
 
-### Terraform
-Be sure you have the correct Terraform version (0.10.x), you can choose the binary here:
+Be sure you have the correct Terraform version (0.11.x), you can choose the binary here:
 - https://releases.hashicorp.com/terraform/
 
-## File structure
-The project has the following folders and files:
-
-- /: root folder
-- /examples: examples for using this module
-- /helpers: Helper scripts
-- /test: Folders with files for testing the module (see Testing section on this file)
-- /main.tf: main file for this module, contains all the resources to create
-- /variables.tf: all the variables for the module
-- /output.tf: the outputs of the module
-- /README.md: this file
 
 ## Testing
 
@@ -114,6 +164,10 @@ Integration tests are run though [test-kitchen](https://github.com/test-kitchen/
   4. `kitchen destroy` tears down the underlying resources created by `kitchen converge`. Run `kitchen destroy <INSTANCE_NAME>` to tear down resources for a specific test case.
 
 Alternatively, you can simply run `make test_integration_docker` to run all the test steps non-interactively.
+
+#### Known Issues when running tests inside container
+When running the example using the interactive shell (`make docker_run`) kitchen fails to read :
+credentials.json. The $GOOGLE_APPLICATION_CREDENTIALS variable is set to a tmp dir (i.e `/tmp/tmp.NFHS144`)
 
 #### Test configuration
 
